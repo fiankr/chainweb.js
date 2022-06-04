@@ -435,11 +435,18 @@ const chainUpdates = (depth, chainIds, callback, network, host) => {
     chainIds.forEach(x => bs[x] = new HeaderBuffer(depth, callback));
     return headerUpdates(
         hdr =>  {
-            try {
-                return (bs[hdr.header.chainId] == null || bs[hdr.header.chainId].add == null) ? undefined : bs[hdr.header.chainId].add(hdr);
-            } catch (e) {
-                console.log(e);
-                return undefined;
+            const chainId = hdr.header.chainId;
+            const headerBuffer = bs[chainId];
+            if (headerBuffer) {
+                try {
+                    return headerBuffer.add(hdr);
+                } catch (e) {
+                    console.log(e);
+                    // if add() throws -> HeaderBuffer inconsistent with chain
+                    // so reinitialize HeaderBuffer
+                    bs[chainId] = new HeaderBuffer(depth, callback);
+                    return undefined;
+                }
             }
         },
         network,
