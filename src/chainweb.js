@@ -351,7 +351,7 @@ const currentBranch = async (chainId, start, end, n, format, network, host) => {
  * @param {string} [host="https://api.chainweb.com"] - chainweb api host
  * @param {Object} [retryOptions] - retry options object as accepted by the retry package
  * @param {boolean} [retryOptions.retry404=false] - whether to retry on 404 results
- * @return {Object[]} Array of block header objects. There is no guarantee about how many paylaods are returned and what payloads aer included in the result.
+ * @return {Promise<Object[]>} Array of block header objects. There is no guarantee about how many paylaods are returned and what payloads aer included in the result.
  *
  * @alias module:chainweb.internal.payloads
  */
@@ -434,7 +434,14 @@ const chainUpdates = (depth, chainIds, callback, network, host) => {
     let bs = {};
     chainIds.forEach(x => bs[x] = new HeaderBuffer(depth, callback));
     return headerUpdates(
-        hdr => (bs[hdr.header.chainId] == null || bs[hdr.header.chainId].add == null) ? undefined : bs[hdr.header.chainId].add(hdr),
+        hdr =>  {
+            try {
+                return (bs[hdr.header.chainId] == null || bs[hdr.header.chainId].add == null) ? undefined : bs[hdr.header.chainId].add(hdr);
+            } catch (e) {
+                console.log(e);
+                return undefined;
+            }
+        },
         network,
         host
     );
